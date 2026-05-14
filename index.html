@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>French Wine — Nielsen L52W Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --cream: #FAF8F3;
+    --ink: #1C1A17;
+    --ink-mid: #4A4740;
+    --ink-light: #8C8880;
+    --border: #E2DED6;
+    --red-wine: #7B2D3E;
+    --white-wine: #C8A96A;
+    --rose-wine: #D4788A;
+    --prov: #8B5E7A;
+    --rhone: #C8603A;
+    --bord: #3A5C8B;
+    --up: #2D6B4A;
+    --dn: #8B2B2B;
+    --gaw: #1C4F3A;
+    --gaw-light: #E8F2EC;
+  }
+
+  body {
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 48px 40px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  /* HEADER */
+  .header { border-bottom: 1px solid var(--ink); padding-bottom: 24px; margin-bottom: 40px; }
+  .header-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .logo { font-size: 11px; font-weight: 500; letter-spacing: 0.15em; color: var(--ink-light); text-transform: uppercase; }
+  .header h1 { font-family: 'DM Serif Display', serif; font-size: 38px; font-weight: 400; letter-spacing: -0.02em; margin-top: 16px; line-height: 1.1; }
+  .header-meta { font-size: 12px; color: var(--ink-light); margin-top: 10px; letter-spacing: 0.02em; }
+  .gaw-badge { background: var(--gaw); color: #fff; font-size: 10px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 10px; border-radius: 2px; }
+
+  /* SECTIONS */
+  .section { margin-bottom: 48px; }
+  .section-label { font-size: 10px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 20px; padding-bottom: 8px; border-bottom: 0.5px solid var(--border); }
+
+  /* METRIC CARDS */
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 0; }
+  .metric { border: 0.5px solid var(--border); padding: 18px 20px; background: #fff; }
+  .metric-label { font-size: 11px; color: var(--ink-light); letter-spacing: 0.05em; margin-bottom: 8px; }
+  .metric-value { font-family: 'DM Serif Display', serif; font-size: 30px; color: var(--ink); line-height: 1; margin-bottom: 6px; }
+  .metric-detail { font-size: 12px; color: var(--ink-mid); line-height: 1.5; }
+  .up { color: var(--up); font-weight: 500; }
+  .dn { color: var(--dn); font-weight: 500; }
+
+  /* CHART GRID */
+  .chart-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .chart-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
+  .chart-box { background: #fff; border: 0.5px solid var(--border); padding: 24px; }
+  .chart-title { font-size: 12px; font-weight: 500; color: var(--ink); margin-bottom: 4px; }
+  .chart-sub { font-size: 11px; color: var(--ink-light); margin-bottom: 16px; }
+  .chart-wrap { position: relative; }
+
+  /* GAW CALLOUT */
+  .gaw-section { background: var(--gaw-light); border-left: 3px solid var(--gaw); padding: 20px 24px; margin-bottom: 48px; }
+  .gaw-section h3 { font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gaw); margin-bottom: 12px; }
+  .gaw-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .gaw-item { }
+  .gaw-item-title { font-size: 12px; font-weight: 500; color: var(--gaw); margin-bottom: 4px; }
+  .gaw-item-body { font-size: 12px; color: var(--ink-mid); line-height: 1.6; }
+
+  /* LEGEND */
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-mid); }
+  .legend-sq { width: 10px; height: 10px; border-radius: 1px; flex-shrink: 0; }
+
+  /* BRAND TABLE */
+  .brand-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .brand-table th { font-size: 10px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-light); text-align: left; padding: 8px 12px; border-bottom: 0.5px solid var(--border); }
+  .brand-table td { padding: 9px 12px; border-bottom: 0.5px solid var(--border); color: var(--ink-mid); vertical-align: middle; }
+  .brand-table td:first-child { color: var(--ink); font-weight: 400; }
+  .brand-table tr:last-child td { border-bottom: none; }
+  .pill { display: inline-block; font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 2px; letter-spacing: 0.04em; }
+  .pill-up { background: #E8F2EC; color: var(--up); }
+  .pill-dn { background: #F5E8E8; color: var(--dn); }
+  .pill-flat { background: #F0EDE8; color: var(--ink-light); }
+
+  /* NOTE */
+  .note { font-size: 11px; color: var(--ink-light); font-style: italic; margin-top: 10px; line-height: 1.6; }
+
+  /* LVF CALLOUT */
+  .lvf-note { background: #FFF8EE; border-left: 3px solid var(--white-wine); padding: 14px 18px; margin-bottom: 32px; font-size: 12px; color: var(--ink-mid); line-height: 1.7; }
+  .lvf-note strong { color: var(--ink); font-weight: 500; }
+
+  /* FOOTER */
+  .footer { border-top: 0.5px solid var(--border); padding-top: 20px; margin-top: 48px; font-size: 11px; color: var(--ink-light); display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="logo">Guy Anderson Wines</div>
+    <span class="gaw-badge">Confidential</span>
+  </div>
+  <h1>French Wine<br>Market Snapshot</h1>
+  <div class="header-meta">Nielsen GB Total Coverage &nbsp;·&nbsp; Latest 52 weeks w/e 18 April 2026 &nbsp;·&nbsp; 2,704 SKUs &nbsp;·&nbsp; Still wine</div>
+</div>
+
+<!-- TOTAL MARKET -->
+<div class="section">
+  <div class="section-label">Total market by colour</div>
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-label">Red wine</div>
+      <div class="metric-value">£405M</div>
+      <div class="metric-detail"><span class="up">+2.5%</span> value &nbsp;|&nbsp; <span class="dn">−0.7%</span> volume<br>49.3M units (YA 49.7M)<br>Avg. price £8.21 (YA £7.96)</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">White wine</div>
+      <div class="metric-value">£349M</div>
+      <div class="metric-detail"><span class="up">+2.6%</span> value &nbsp;|&nbsp; <span class="up">+0.7%</span> volume<br>39.8M units (YA 39.5M)<br>Avg. price £8.77 (YA £8.61)</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Rosé wine</div>
+      <div class="metric-value">£325M</div>
+      <div class="metric-detail"><span class="up">+12.6%</span> value &nbsp;|&nbsp; <span class="up">+11.9%</span> volume<br>37.1M units (YA 33.2M)<br>Avg. price £8.77 (YA £8.72)</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Total French wine</div>
+      <div class="metric-value">£1.09bn</div>
+      <div class="metric-detail">127.0M units (YA 122.3M)<br>&nbsp;<br>Rosé the only colour growing<br>in both value and volume</div>
+    </div>
+  </div>
+</div>
+
+<!-- LVF NOTE -->
+<div class="lvf-note">
+  <strong>Note on La Vieille Ferme:</strong> Nielsen classifies LVF as Rhône in their data — it does not appear as VdF. This significantly inflates the Rhône region figures below. LVF accounts for <strong>£186M (+43%)</strong> of the total and is the single biggest driver of both Rhône and overall branded performance. All figures below reflect Nielsen's own categorisation.
+</div>
+
+<!-- BRANDED vs OL -->
+<div class="section">
+  <div class="section-label">Branded vs own label — the LVF effect</div>
+  <div class="chart-grid-2">
+    <div class="chart-box">
+      <div class="chart-title">Value share (£M)</div>
+      <div class="chart-sub">This year vs year ago</div>
+      <div class="legend">
+        <div class="legend-item"><span class="legend-sq" style="background:#1C4F3A;"></span>This year</div>
+        <div class="legend-item"><span class="legend-sq" style="background:#A8C4B4;"></span>Year ago</div>
+      </div>
+      <div class="chart-wrap" style="height:240px;">
+        <canvas id="olValChart" role="img" aria-label="Branded vs own label value comparison">Branded £722M vs YA £640M. OL £367M vs YA £391M. Branded ex-LVF £536M vs YA £509M.</canvas>
+      </div>
+    </div>
+    <div class="chart-box">
+      <div class="chart-title">% value change vs year ago</div>
+      <div class="chart-sub">With and without LVF</div>
+      <div class="chart-wrap" style="height:264px;">
+        <canvas id="olPctChart" role="img" aria-label="Value change percentage for branded, branded ex-LVF, and own label">Branded +12.9%, Branded ex-LVF +5.3%, OL -6.0%, LVF alone +42.8%.</canvas>
+      </div>
+      <p class="note">Strip out LVF and branded growth drops from +12.9% to +5.3%. Own label declines regardless. LVF is carrying a significant share of the branded headline.</p>
+    </div>
+  </div>
+</div>
+
+<!-- REGIONAL -->
+<div class="section">
+  <div class="section-label">Regional performance — value and volume</div>
+  <div class="chart-box">
+    <div class="chart-title">Value by region (£M) — this year vs year ago</div>
+    <div class="chart-sub">Hover for volume change. Rhône inflated by LVF (see note above).</div>
+    <div class="legend">
+      <div class="legend-item"><span class="legend-sq" style="background:#1C1A17;"></span>This year</div>
+      <div class="legend-item"><span class="legend-sq" style="background:#C8C5BE;"></span>Year ago</div>
+      <div class="legend-item"><span class="legend-sq" style="background:#1C4F3A; opacity:0.3; border: 1.5px solid #1C4F3A;"></span>GAW region</div>
+    </div>
+    <div class="chart-wrap" style="height:320px;">
+      <canvas id="regionChart" role="img" aria-label="French wine value by region, this year vs year ago. Rhône £336M +21%, VdP £225M -6%, Bordeaux £122M -2%, Provence £111M flat, Bourgogne £101M +5%, Loire £60M flat, Languedoc £56M +2%, Beaujolais £31M -5%."></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- PRICE BANDS -->
+<div class="section">
+  <div class="section-label">Price band performance by colour</div>
+  <div class="chart-grid-2">
+    <div class="chart-box">
+      <div class="chart-title">Value by price band (£M)</div>
+      <div class="chart-sub">Category size — where the money sits</div>
+      <div class="legend">
+        <div class="legend-item"><span class="legend-sq" style="background:#7B2D3E;"></span>Red</div>
+        <div class="legend-item"><span class="legend-sq" style="background:#C8A96A;"></span>White</div>
+        <div class="legend-item"><span class="legend-sq" style="background:#D4788A;"></span>Rosé</div>
+      </div>
+      <div class="chart-wrap" style="height:260px;">
+        <canvas id="priceBandChart" role="img" aria-label="Wine value by price band split by colour. Red and Rosé both heaviest in £7-9 band at around £199M each."></canvas>
+      </div>
+    </div>
+    <div class="chart-box">
+      <div class="chart-title">Value % change by price band</div>
+      <div class="chart-sub">Growth and decline within each tier</div>
+      <div class="legend">
+        <div class="legend-item"><span class="legend-sq" style="background:#7B2D3E;"></span>Red</div>
+        <div class="legend-item"><span class="legend-sq" style="background:#C8A96A;"></span>White</div>
+        <div class="legend-item"><span class="legend-sq" style="background:#D4788A;"></span>Rosé</div>
+      </div>
+      <div class="chart-wrap" style="height:260px;">
+        <canvas id="priceGrowthChart" role="img" aria-label="Value percentage change by price band and colour. Rosé £7-9 up +24%. Red £12-15 down -12%."></canvas>
+      </div>
+      <p class="note">Rosé growth concentrated in £7–9 (+24%). Red's core £7–9 tier is flat; decline sharpest in £12–15. White's best band is £15+ (+10%).</p>
+    </div>
+  </div>
+</div>
+
+<!-- GAW CONTEXT -->
+<div class="gaw-section">
+  <h3>GAW portfolio context — where we sit in this market</h3>
+  <div class="gaw-grid">
+    <div class="gaw-item">
+      <div class="gaw-item-title">Provence</div>
+      <div class="gaw-item-body">The premium rosé heartland is stalling: −0.2% value, −2.5% volume. Avg. bottle price £11.74. The £15+ segment (Whispering Angel territory) is up +7% but volume is thin. GAW exposure here is in a softening market — price and brand strength matter more than ever.</div>
+    </div>
+    <div class="gaw-item">
+      <div class="gaw-item-title">Rhône / VdF (LVF)</div>
+      <div class="gaw-item-body">Nielsen records Rhône at +21% value / +20% volume — but this is almost entirely LVF. The underlying Rhône category without LVF is much more modest. As the brand owner, GAW is the primary driver of this regional number. A significant competitive moat, but also concentration risk.</div>
+    </div>
+    <div class="gaw-item">
+      <div class="gaw-item-title">Bordeaux</div>
+      <div class="gaw-item-body">A challenging picture: −1.9% value, −6.4% volume. The £12–15 tier (where much classic Bordeaux sits) is down −12% value. Private label dominates and is also declining. Any GAW Bordeaux SKUs are swimming against the tide — positioning and distribution focus is key.</div>
+    </div>
+  </div>
+</div>
+
+<!-- TOP BRANDS -->
+<div class="section">
+  <div class="section-label">Brand landscape — selected performers</div>
+  <div class="chart-box">
+    <table class="brand-table">
+      <thead>
+        <tr>
+          <th>Brand</th>
+          <th>Region (Nielsen)</th>
+          <th>Colour</th>
+          <th>Value (£M)</th>
+          <th>YA (£M)</th>
+          <th>Value chg</th>
+          <th>Units (M)</th>
+          <th>Units chg</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>La Vieille Ferme</td><td>Rhône (VdF)</td><td>All</td><td>185.9</td><td>130.2</td><td><span class="pill pill-up">+43%</span></td><td>23.8</td><td><span class="pill pill-up">+41%</span></td></tr>
+        <tr><td>Whispering Angel</td><td>Provence</td><td>Rosé</td><td>26.2</td><td>25.8</td><td><span class="pill pill-flat">+1%</span></td><td>1.2</td><td><span class="pill pill-flat">flat</span></td></tr>
+        <tr><td>La P'tite Pierre</td><td>VdP / Rhône</td><td>Rosé / Red</td><td>15.9</td><td>11.1</td><td><span class="pill pill-up">+44%</span></td><td>2.1</td><td><span class="pill pill-up">+36%</span></td></tr>
+        <tr><td>Kylie Minogue</td><td>VdP</td><td>Rosé</td><td>13.7</td><td>13.8</td><td><span class="pill pill-flat">−1%</span></td><td>1.6</td><td><span class="pill pill-dn">−5%</span></td></tr>
+        <tr><td>Calvet Prestige</td><td>Bordeaux / Rhône</td><td>Red / White</td><td>11.8</td><td>13.0</td><td><span class="pill pill-dn">−10%</span></td><td>1.4</td><td><span class="pill pill-dn">−14%</span></td></tr>
+        <tr><td>Louis Jadot</td><td>Bourgogne</td><td>Red / White</td><td>10.2</td><td>10.3</td><td><span class="pill pill-flat">−1%</span></td><td>0.9</td><td><span class="pill pill-flat">flat</span></td></tr>
+        <tr><td>Le Bijou de Sophie Valrose</td><td>VdP</td><td>Rosé</td><td>10.2</td><td>6.4</td><td><span class="pill pill-up">+58%</span></td><td>1.1</td><td><span class="pill pill-up">+53%</span></td></tr>
+        <tr><td>Miraval Studio</td><td>Provence</td><td>Rosé</td><td>6.0</td><td>4.6</td><td><span class="pill pill-up">+31%</span></td><td>0.6</td><td><span class="pill pill-up">+38%</span></td></tr>
+        <tr><td>Le Relais du Roi</td><td>Rhône</td><td>Red</td><td>6.6</td><td>1.0</td><td><span class="pill pill-up">+538%</span></td><td>1.1</td><td><span class="pill pill-up">+525%</span></td></tr>
+        <tr><td>Calvet</td><td>Loire / Bordeaux</td><td>White / Red</td><td>5.7</td><td>7.2</td><td><span class="pill pill-dn">−21%</span></td><td>0.8</td><td><span class="pill pill-dn">−27%</span></td></tr>
+        <tr><td>Wise Wolf</td><td>VdP</td><td>Red / Rosé</td><td>2.0</td><td>3.1</td><td><span class="pill pill-dn">−37%</span></td><td>0.3</td><td><span class="pill pill-dn">−40%</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="footer">
+  <span>Guy Anderson Wines &nbsp;·&nbsp; Internal use only</span>
+  <span>Source: Nielsen GB Total Coverage, L52W w/e 18 Apr 2026</span>
+</div>
+
+<script>
+const C = Chart.defaults;
+C.font.family = "'DM Sans', sans-serif";
+C.font.weight = '300';
+C.color = '#8C8880';
+
+const grid = { color: '#E2DED6', drawBorder: false };
+const fmt = v => '£' + Math.round(v) + 'M';
+const fmtP = v => (v >= 0 ? '+' : '') + v.toFixed(1) + '%';
+
+// GAW regions for highlight
+const gawRegions = ['Rhône','Provence','Bordeaux'];
+
+// OL value chart
+new Chart(document.getElementById('olValChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Branded\n(incl. LVF)', 'Branded\n(excl. LVF)', 'Own label', 'LVF\nalone'],
+    datasets: [
+      { label: 'This year', data: [722, 536, 367, 186], backgroundColor: ['#1C4F3A','#1C4F3A','#4A4740','#C8A96A'], borderRadius: 2 },
+      { label: 'Year ago',  data: [640, 509, 391, 130], backgroundColor: ['#A8C4B4','#A8C4B4','#C8C5BE','#EDD9A3'], borderRadius: 2 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.dataset.label + ': ' + fmt(c.parsed.y) } } },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+      y: { grid, border: { display: false }, ticks: { callback: v => '£' + v + 'M', font: { size: 11 } } }
+    }
+  }
+});
+
+// OL pct chart
+new Chart(document.getElementById('olPctChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Branded\n(incl. LVF)', 'Branded\n(excl. LVF)', 'Own label', 'LVF\nalone'],
+    datasets: [{
+      data: [12.9, 5.3, -6.0, 42.8],
+      backgroundColor: [
+        v => v >= 0 ? '#1C4F3A' : '#8B2B2B',
+        '#1C4F3A', '#8B2B2B', '#C8A96A'
+      ].map((c, i) => [12.9, 5.3, -6.0, 42.8][i] >= 0 ? (i === 2 ? '#8B2B2B' : i === 3 ? '#C8A96A' : '#1C4F3A') : '#8B2B2B'),
+      borderRadius: 2
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => fmtP(c.parsed.y) } } },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+      y: { grid, border: { display: false }, ticks: { callback: v => fmtP(v), font: { size: 11 } } }
+    }
+  }
+});
+
+// Region chart
+const regions = ['Rhône','VdP','Bordeaux','Provence','Bourgogne','Loire','Languedoc','Beaujolais'];
+const tyVal  = [336,225,122,111,101,60,56,31];
+const yaVal  = [277,239,125,112,96, 60,55,33];
+const volChg = ['+20.0%','-8.4%','-6.4%','-2.4%','+4.1%','-3.2%','-2.1%','-9.8%'];
+const isGaw  = regions.map(r => gawRegions.includes(r));
+
+new Chart(document.getElementById('regionChart'), {
+  type: 'bar',
+  indexAxis: 'y',
+  data: {
+    labels: regions,
+    datasets: [
+      { label: 'This year', data: tyVal, backgroundColor: regions.map((_,i) => isGaw[i] ? '#1C4F3A' : '#1C1A17'), borderRadius: 2 },
+      { label: 'Year ago',  data: yaVal, backgroundColor: regions.map((_,i) => isGaw[i] ? '#A8C4B4' : '#C8C5BE'), borderRadius: 2 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: {
+        label: c => c.dataset.label + ': ' + fmt(c.parsed.x),
+        afterBody: items => 'Volume chg: ' + volChg[items[0].dataIndex]
+      }}
+    },
+    scales: {
+      x: { grid, border: { display: false }, ticks: { callback: v => '£' + v + 'M', font: { size: 11 } } },
+      y: { grid: { display: false }, ticks: { font: { size: 12 } } }
+    }
+  }
+});
+
+// Price band value
+const bands = ['Under £5','£5–7','£7–9','£9–12','£12–15','£15+'];
+new Chart(document.getElementById('priceBandChart'), {
+  type: 'bar',
+  data: {
+    labels: bands,
+    datasets: [
+      { label: 'Red',   data: [15.7,67.8,198.5,65.9,20.0,37.2], backgroundColor: '#7B2D3E', borderRadius: 2 },
+      { label: 'White', data: [0.5,62.9,119.2,69.3,59.1,37.9],  backgroundColor: '#C8A96A', borderRadius: 2 },
+      { label: 'Rosé',  data: [0.2,32.2,199.4,37.1,16.9,39.7],  backgroundColor: '#D4788A', borderRadius: 2 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.dataset.label + ': ' + fmt(c.parsed.y) } } },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 0, autoSkip: false } },
+      y: { grid, border: { display: false }, ticks: { callback: v => '£' + v + 'M', font: { size: 11 } } }
+    }
+  }
+});
+
+// Price band growth
+new Chart(document.getElementById('priceGrowthChart'), {
+  type: 'bar',
+  data: {
+    labels: bands,
+    datasets: [
+      { label: 'Red',   data: [59.5, 10.0, -0.8, -0.0, -12.4,  6.5], backgroundColor: '#7B2D3E', borderRadius: 2 },
+      { label: 'White', data: [null,   2.5,  3.3,  -1.7,  1.2,  10.2], backgroundColor: '#C8A96A', borderRadius: 2 },
+      { label: 'Rosé',  data: [-33.2,-15.7, 23.6,  0.4,  11.4,   6.6], backgroundColor: '#D4788A', borderRadius: 2 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.dataset.label + ': ' + (c.parsed.y != null ? fmtP(c.parsed.y) : 'n/a') } } },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 0, autoSkip: false } },
+      y: { grid, border: { display: false }, ticks: { callback: v => fmtP(v), font: { size: 11 } } }
+    }
+  }
+});
+</script>
+</body>
+</html>
